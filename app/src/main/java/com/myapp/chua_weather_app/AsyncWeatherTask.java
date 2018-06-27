@@ -2,6 +2,7 @@ package com.myapp.chua_weather_app;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.bumptech.glide.Glide;
 
@@ -13,23 +14,23 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import static android.content.ContentValues.TAG;
+
 /**
  * Created by Chua on 25/06/2018.
  */
 
-public class DownloadWeatherTask extends AsyncTask<String, Void, String> {
-
+public class AsyncWeatherTask extends AsyncTask<String, Void, String> {
 
     String weather_result;
     private Context mContext;
 
-    public DownloadWeatherTask(Context context) {
+    public AsyncWeatherTask(Context context) {
         mContext = context;
     }
 
     @Override
     protected String doInBackground(String... weatherURL) {
-
 
         weather_result = "";
         HttpURLConnection urlConnection = null;
@@ -63,24 +64,31 @@ public class DownloadWeatherTask extends AsyncTask<String, Void, String> {
         return null;
     }
 
+    @Override
+    protected void onProgressUpdate(Void... values) {
+        super.onProgressUpdate(values);
+
+
+
+    }
 
     @Override
     protected void onPostExecute(String s) {
         super.onPostExecute(s);
 
         try {
-
-//            MainActivity MainActivity = new MainActivity();
-
             JSONObject jsonObject = new JSONObject(weather_result);
             JSONObject curentWeatherData = new JSONObject(jsonObject.getString("main"));
             JSONObject curentWindData = new JSONObject(jsonObject.getString("wind"));
             String currentWeatherInfo = jsonObject.getString("weather");
 
+            String place = jsonObject.getString("name");
+
             JSONArray arr = new JSONArray(currentWeatherInfo);
             for (int i = 0; i < arr.length(); i++) {
 
                 JSONObject jsonPart = arr.getJSONObject(i);
+
 
                 String description = "";
                 String icon = "";
@@ -92,10 +100,10 @@ public class DownloadWeatherTask extends AsyncTask<String, Void, String> {
                 Glide.with(mContext)
                         .asBitmap()
                         .load(iconUrl)
-                        .into(MainActivity.icon);
+                        .into(AdapterRecyclerView.weatherIcon);
 
-                MainActivity.textIconUri.setText(iconUrl);
-                MainActivity.textWeather.setText(description);
+                AdapterRecyclerView.textIconUri.setText(iconUrl);
+                AdapterRecyclerView.textWeather.setText(description);
 
             }
 
@@ -112,23 +120,25 @@ public class DownloadWeatherTask extends AsyncTask<String, Void, String> {
             int mintempInt = (int) (mintemp - 273.15); //convert double temp to int then convert Kelvin to Celsius
             int maxtempInt = (int) (maxtemp - 273.15); //convert double temp to int then convert Kelvin to Celsius
 
+            AdapterRecyclerView.textTemperature.setText(String.valueOf(temperatureInt) + " °C");
 
-            String place = jsonObject.getString("name");
+            AdapterRecyclerView.textLocation.setText(place);
 
+            AdapterRecyclerView.textPressure.setText("Pressure: " + String.valueOf(pressure));
+            AdapterRecyclerView.textHumidity.setText("Humidity: " + String.valueOf(humidity));
+            AdapterRecyclerView.textMinTemp.setText("Min Temperature: " + String.valueOf(mintempInt) + "°C");
+            AdapterRecyclerView.textMaxTemp.setText("Max Temperature: " + String.valueOf(maxtempInt) + "°C");
+            AdapterRecyclerView.textSpeed.setText("Speed: " + String.valueOf(speed));
+            AdapterRecyclerView.textDegree.setText("Degree: " + String.valueOf(degree));
 
-            MainActivity.textTemperature.setText(String.valueOf(temperatureInt) + " °C");
-            MainActivity.textLocation.setText(place+"\n(Current Location)"  );
-            MainActivity.textPressure.setText("Pressure: " + String.valueOf(pressure));
-            MainActivity.textHumidity.setText("Humidity: " + String.valueOf(humidity));
-            MainActivity.textMinTemp.setText("Min Temperature: " + String.valueOf(mintempInt) + "°C");
-            MainActivity.textMaxTemp.setText("Max Temperature: " + String.valueOf(maxtempInt) + "°C");
-            MainActivity.textSpeed.setText("Speed: " + String.valueOf(speed));
-            MainActivity.textDegree.setText("Degree: " + String.valueOf(degree));
+            Log.d(TAG, "onPostExecute: check "+place);
+
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-
+        this.cancel(true);
     }
+
 }
